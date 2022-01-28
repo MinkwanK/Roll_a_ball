@@ -13,6 +13,8 @@ public class PlayerController : MonoBehaviour
 
     public int speed;
     public int jump;
+    public int Death_Height; // 사망 높이
+
     private int score = 0;
     public int Max_Score = 6;
     public TextMeshProUGUI countScore; //TextMeshPro 레퍼런스
@@ -22,6 +24,9 @@ public class PlayerController : MonoBehaviour
     private AudioSource audioPoint;
     private AudioSource audioWin;
     private AudioSource audioLose;
+    private AudioSource audioSpeed;
+
+    public AudioClip speedsound;
     public AudioClip pointsound;
     public AudioClip Winsound;
     public AudioClip Losesound;
@@ -34,7 +39,9 @@ public class PlayerController : MonoBehaviour
     bool booster = false;  //플레이어가 현재 스피드 아이템을 먹은 상태인지 체크 
     float speedtime = 3f;  //3초 동안 플레이어를 빠르게 만들어준다.
     float speedtimer = 0f; //스피드타이머
+
     bool startgame = false; //게임 시작을 했는지 안했는지
+    bool playerDeath = false; //플레이어가 죽었는지 살았는지.
 
 
 
@@ -50,14 +57,16 @@ public class PlayerController : MonoBehaviour
         audioPoint = gameObject.AddComponent<AudioSource>();
         audioWin = gameObject.AddComponent<AudioSource>();
         audioLose = gameObject.AddComponent<AudioSource>();
+        audioSpeed = gameObject.AddComponent<AudioSource>();
 
         audioPoint.clip = pointsound;
         audioWin.clip = Winsound;
         audioLose.clip = Losesound;
-
+        audioSpeed.clip = speedsound;
         audioPoint.loop = false;
         audioWin.loop = false;
         audioLose.loop = false;
+        audioSpeed.loop = false;
 
 
 
@@ -82,8 +91,9 @@ public class PlayerController : MonoBehaviour
 
     void Update()
     {
+        
         countScore.text = score.ToString() + " / " + Max_Score.ToString(); //현재 몇개의 점수를 먹었는지를 보여준다.
-
+        OnHeightLoseCondition();
         if (startgame == false)
         {
             if (Input.GetKeyDown(KeyCode.LeftControl))
@@ -129,6 +139,7 @@ public class PlayerController : MonoBehaviour
             if (Input.GetKeyDown(KeyCode.LeftControl))
             {
                 startgame = true;
+                playerDeath = false;
                 SceneManager.LoadScene(SceneManager.GetActiveScene().name);
 
                 //GetActiveScene().name을 통해 현재 씬의 이름을 받아온다.
@@ -176,13 +187,25 @@ private void OnTriggerEnter(Collider other) //트리거 함수
 
         if(other.gameObject.CompareTag("SpeedItem"))
         {
-
+            audioSpeed.Play();
             speed += 8;
             booster = true;
             other.gameObject.SetActive(false);
         }
 
       
+    }
+
+    private void OnHeightLoseCondition()  //플레이어의 높이가 DeathHeight보다 낮으면 플레이어 사망 처리. 업데이트문에 계속 실행되게 하면 반복된다. 이 함수가...
+                                            //따라서 audiolose가 플레이되지 않는다. 그래서 플레이어가 죽었는지 살았는지의 조건을 달았다.
+    {
+        if(rb.transform.transform.position.y < Death_Height && playerDeath == false)
+        {
+            LoseTextObject.SetActive(true);
+            audioLose.Play();
+            playerDeath = true; //플레이어 사망처리.
+            Time.timeScale = 0; //timeScale의 기본값은 1이다. 
+        }
     }
 
 
